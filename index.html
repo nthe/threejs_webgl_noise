@@ -15,10 +15,10 @@
 <script src="perlin.js"></script>
 <script>
 
-    var side = 100;
+    var side = 300;
     var hi = side * 400;
     var octaves = 11;
-
+    var TWO_PI = Math.PI * 2
     var width  = window.innerWidth,
         height = window.innerHeight;
 
@@ -31,44 +31,42 @@
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
-
+    
     var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);   
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
     generate_landscape();
-		
-    scene.add(new THREE.AmbientLight(0x777777));
+
+    scene.add(new THREE.AmbientLight(0xffffff));
     
-    var material = new THREE.MeshBasicMaterial({
-        color: 0x333333,
-        wireframe: true
-    });
-
-    var plane = new THREE.Mesh(geometry, material);
-    scene.add(plane);
-
-    var raycaster = new THREE.Raycaster();
-    //raycaster.set(camera.position, THREE.Vector3(0, -1, 0));
-
+    var material = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true });
+    scene.add(new THREE.Mesh(geometry, material));
+    
     var controls = new THREE.TrackballControls(camera);
 
     document.getElementById('webgl').appendChild(renderer.domElement);
 
     render();
-
+    var ix = side * side;
+    var side_2 = side * side;
     function render() {
         controls.update();
-        requestAnimationFrame(render);
+        for(var j = side; j < side_2; j++){
+            geometry.vertices[j - side].z = geometry.vertices[j].z;
+        }
+        for(var j = (side_2 - side); j < side_2; j++){
+            geometry.vertices[j].z = (((octave_perlin(ix % side, ix / side, 0.5) * hi) - hi) / 65535 * 100) * (Math.cos((ix / side) / 200) * 1.5);
+            ix++;
+        }
+        setTimeout(function(){ requestAnimationFrame(render); }, 1000 / 25);
+        geometry.verticesNeedUpdate = true;
         renderer.render(scene, camera);
     }
 
     function generate_landscape(){
-        var val = 0;
-        for(var j = 0; j < side; j+=1){
-            for (var i = 0; i < side; i+=1){
-                val = (octave_perlin(i, j, 0.5) * hi) - hi * 0.65;
-                geometry.vertices[j * side + i].z = val / 65535 * 100; 
-            }
+        noise.seed(Math.random());
+        for (var i = 0; i < side * side; i+=1){ 
+            geometry.vertices[i].z = (((octave_perlin(i % side, i / side, 0.5) * hi) - hi) / 65535 * 100) * (Math.cos((i / side) / 200) * 1.5);
         }
     }
 
@@ -77,6 +75,7 @@
         var frequency = 1;
         var amplitude = 1.;
         var maxValue = 0;
+        
         for(var i=0; i < octaves; i++) {
             total += (noise.perlin3((x/side) * frequency, (y/side) * frequency, 1) + 1) * amplitude;
             maxValue += amplitude;
