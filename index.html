@@ -15,52 +15,44 @@
 <script src="perlin.js"></script>
 <script>
 
-    var side = 150;
+    var side = 100;
     var hi = side * 400;
+    var octaves = 11;
 
     var width  = window.innerWidth,
-            height = window.innerHeight;
+        height = window.innerHeight;
 
     var scene = new THREE.Scene();
-
-    // var axes = new THREE.AxisHelper(side);
-    // scene.add(axes);
-
+    
     var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.x = 0;
     camera.position.y = -side;
     camera.position.z = side / 2;
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
 
-    var data = new Uint16Array(random_array());
-
-    var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);
-
+    var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);   
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
-
-    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-        geometry.vertices[i].z = data[i] / 65535 * 100;
-    }
-
-    var material = new THREE.MeshPhongMaterial({
-        color: 0xaaaaaa,
+    generate_landscape();
+		
+    scene.add(new THREE.AmbientLight(0x777777));
+    
+    var material = new THREE.MeshBasicMaterial({
+        color: 0x333333,
         wireframe: true
     });
 
     var plane = new THREE.Mesh(geometry, material);
-    plane.castShadow = true;
-    plane.receiveShadow = true;
     scene.add(plane);
+
+    var raycaster = new THREE.Raycaster();
+    //raycaster.set(camera.position, THREE.Vector3(0, -1, 0));
 
     var controls = new THREE.TrackballControls(camera);
 
     document.getElementById('webgl').appendChild(renderer.domElement);
-
-    var dirLight = new THREE.DirectionalLight(0x000000, 1);
-    dirLight.position.set(100, 100, 1000000);
-    scene.add(dirLight);
 
     render();
 
@@ -70,22 +62,17 @@
         renderer.render(scene, camera);
     }
 
-    function random_array(octaves){
-        var a = [];
+    function generate_landscape(){
         var val = 0;
-        var minn = 2000000;
-        octaves = 7 || octaves;
         for(var j = 0; j < side; j+=1){
             for (var i = 0; i < side; i+=1){
-                val = (octavePerlin(i, j, octaves, 0.5) * hi);
-                val -= hi * 0.65;
-                a.push(val);
+                val = (octave_perlin(i, j, 0.5) * hi) - hi * 0.65;
+                geometry.vertices[j * side + i].z = val / 65535 * 100; 
             }
         }
-        return a;
     }
 
-    function octavePerlin(x, y, octaves, persistence) {
+    function octave_perlin(x, y, persistence) {
         var total = 0;
         var frequency = 1;
         var amplitude = 1.;
@@ -97,17 +84,6 @@
             frequency *= 2;
         }
         return total/maxValue;
-    }
-
-    function convertToRange(value, srcRange, dstRange){
-        if (value < srcRange[0] || value > srcRange[1]){
-            return NaN;
-        }
-        var srcMax = srcRange[1] - srcRange[0],
-                dstMax = dstRange[1] - dstRange[0],
-                adjValue = value - srcRange[0];
-
-        return (adjValue * dstMax / srcMax) + dstRange[0];
     }
 
 </script>
