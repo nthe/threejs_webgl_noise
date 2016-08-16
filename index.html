@@ -15,9 +15,11 @@
 <script src="perlin.js"></script>
 <script>
 
-    var side = 200;
+    var side = 150;
+    var hi = side * 400;
+
     var width  = window.innerWidth,
-        height = window.innerHeight;
+            height = window.innerHeight;
 
     var scene = new THREE.Scene();
 
@@ -43,7 +45,7 @@
     }
 
     var material = new THREE.MeshPhongMaterial({
-        color: 0xdddddd,
+        color: 0xaaaaaa,
         wireframe: true
     });
 
@@ -56,12 +58,9 @@
 
     document.getElementById('webgl').appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0x111111));
-
-    var light = new THREE.DirectionalLight(0xffffff, 1);
-    light.shadowCameraVisible = true;
-    light.position.set(0,side + 100, side - 100);
-    scene.add(light);
+    var dirLight = new THREE.DirectionalLight(0x000000, 1);
+    dirLight.position.set(100, 100, 1000000);
+    scene.add(dirLight);
 
     render();
 
@@ -74,17 +73,41 @@
     function random_array(octaves){
         var a = [];
         var val = 0;
-        octaves = 2 || octaves;
-
+        var minn = 2000000;
+        octaves = 7 || octaves;
         for(var j = 0; j < side; j+=1){
             for (var i = 0; i < side; i+=1){
-                for( var o = 1; o < octaves; o += 1) {
-                    val = Math.abs(noise.simplex2(i / 75., j / 75.)) * (10000. / o);
-                }
+                val = (octavePerlin(i, j, octaves, 0.5) * hi);
+                val -= hi * 0.65;
                 a.push(val);
             }
         }
         return a;
+    }
+
+    function octavePerlin(x, y, octaves, persistence) {
+        var total = 0;
+        var frequency = 1;
+        var amplitude = 1.;
+        var maxValue = 0;
+        for(var i=0; i < octaves; i++) {
+            total += (noise.perlin3((x/side) * frequency, (y/side) * frequency, 1) + 1) * amplitude;
+            maxValue += amplitude;
+            amplitude *= persistence;
+            frequency *= 2;
+        }
+        return total/maxValue;
+    }
+
+    function convertToRange(value, srcRange, dstRange){
+        if (value < srcRange[0] || value > srcRange[1]){
+            return NaN;
+        }
+        var srcMax = srcRange[1] - srcRange[0],
+                dstMax = dstRange[1] - dstRange[0],
+                adjValue = value - srcRange[0];
+
+        return (adjValue * dstMax / srcMax) + dstRange[0];
     }
 
 </script>
