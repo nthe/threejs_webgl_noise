@@ -15,23 +15,24 @@
 <script src="perlin.js"></script>
 <script>
 
+    var side = 200;
     var width  = window.innerWidth,
         height = window.innerHeight;
 
     var scene = new THREE.Scene();
 
-    var axes = new THREE.AxisHelper(200);
+    var axes = new THREE.AxisHelper(side);
     scene.add(axes);
 
     var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.y = -200;
-    camera.position.z = 100;
+    camera.position.y = -side;
+    camera.position.z = side / 2;
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
 
     loadTerrain(function (data){
-        var geometry = new THREE.PlaneGeometry(200, 200, 199, 199);
+        var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);
 
         geometry.computeFaceNormals();
         geometry.computeVertexNormals();
@@ -58,7 +59,7 @@
 
         var light = new THREE.DirectionalLight(0xffffff, 1);
         light.shadowCameraVisible = true;
-        light.position.set(0,300,100);
+        light.position.set(0,side + 100, side - 100);
         scene.add(light);
 
         render();
@@ -68,7 +69,6 @@
             requestAnimationFrame(render);
             renderer.render(scene, camera);
         }
-
     });
 
     var controls = new THREE.TrackballControls(camera); 
@@ -84,20 +84,17 @@
     }
 
     function loadTerrain(callback) {
-	callback(new Uint16Array(random_array(40000)));
+	callback(new Uint16Array(random_array()));
     }
 
-    function random_array(len){
-	noise.seed(Math.random());
-
-    	var a = [];
-	for(var j = 0; j < len / 2; j+=1){
-		for (var i = 0; i < (len / 2) + 1; i+=1){
-		//	a.push(Math.round((noise.simplex2(i, j) + .5) * 65535));
-		}
-	}
-	console.log(a);
-	//	return a;
+    function random_array(){
+        var a = [];
+        for(var j = 0; j < side; j+=1){
+            for (var i = 0; i < side; i+=1){
+                a.push(Math.abs(noise.simplex2(i / 75., j / 75.)) * 10000.);
+            }
+        }
+        return a;
     }
 
 </script>
