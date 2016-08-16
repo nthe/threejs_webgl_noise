@@ -1,17 +1,17 @@
 <!doctype html>
 <html lang="en">
 <head>
-<title>webgl-noise</title>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-<style>
-    body { margin: 0; overflow: hidden; }
-</style>
+    <title>webgl-noise</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body { margin: 0; overflow: hidden; }
+    </style>
 </head>
 <body>
 <div id="webgl"></div>
 <script src="three.min.js"></script>
-<script src="TrackballControls.js"></script> 
+<script src="TrackballControls.js"></script>
 <script src="perlin.js"></script>
 <script>
 
@@ -31,67 +31,57 @@
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
 
-    loadTerrain(function (data){
-        var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);
+    var data = new Uint16Array(random_array());
 
-        geometry.computeFaceNormals();
-        geometry.computeVertexNormals();
+    var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);
 
-        for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-            geometry.vertices[i].z = data[i] / 65535 * 100;
-        }
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
 
-        var material = new THREE.MeshPhongMaterial({
-            color: 0xdddddd, 
-            wireframe: true
-        });
+    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
+        geometry.vertices[i].z = data[i] / 65535 * 100;
+    }
 
-        var plane = new THREE.Mesh(geometry, material);
-        plane.castShadow = true;
-        plane.receiveShadow = true;
-        scene.add(plane);
-
-        var controls = new THREE.TrackballControls(camera); 
-
-        document.getElementById('webgl').appendChild(renderer.domElement);
-
-        scene.add(new THREE.AmbientLight(0x111111));
-
-        var light = new THREE.DirectionalLight(0xffffff, 1);
-        light.shadowCameraVisible = true;
-        light.position.set(0,side + 100, side - 100);
-        scene.add(light);
-
-        render();
-
-        function render() {
-            controls.update();    
-            requestAnimationFrame(render);
-            renderer.render(scene, camera);
-        }
+    var material = new THREE.MeshPhongMaterial({
+        color: 0xdddddd,
+        wireframe: true
     });
 
-    var controls = new THREE.TrackballControls(camera); 
+    var plane = new THREE.Mesh(geometry, material);
+    plane.castShadow = true;
+    plane.receiveShadow = true;
+    scene.add(plane);
+
+    var controls = new THREE.TrackballControls(camera);
 
     document.getElementById('webgl').appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0x111111));
+
+    var light = new THREE.DirectionalLight(0xffffff, 1);
+    light.shadowCameraVisible = true;
+    light.position.set(0,side + 100, side - 100);
+    scene.add(light);
 
     render();
 
     function render() {
-        controls.update();    
+        controls.update();
         requestAnimationFrame(render);
         renderer.render(scene, camera);
     }
 
-    function loadTerrain(callback) {
-	callback(new Uint16Array(random_array()));
-    }
-
-    function random_array(){
+    function random_array(octaves){
         var a = [];
+        var val = 0;
+        octaves = 2 || octaves;
+
         for(var j = 0; j < side; j+=1){
             for (var i = 0; i < side; i+=1){
-                a.push(Math.abs(noise.simplex2(i / 75., j / 75.)) * 10000.);
+                for( var o = 1; o < octaves; o += 1) {
+                    val = Math.abs(noise.simplex2(i / 75., j / 75.)) * (10000. / o);
+                }
+                a.push(val);
             }
         }
         return a;
