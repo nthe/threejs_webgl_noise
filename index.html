@@ -15,19 +15,22 @@
 <script src="perlin.js"></script>
 <script>
 
-    var side = 300;
+    var side = 350;
     var hi = side * 400;
     var octaves = 11;
-    var TWO_PI = Math.PI * 2
+    var roll = true;
+
+		var TWO_PI = Math.PI * 2
     var width  = window.innerWidth,
         height = window.innerHeight;
 
     var scene = new THREE.Scene();
     
-    var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(65, width / height, 0.5, 500);
     camera.position.x = 0;
-    camera.position.y = -side;
+    camera.position.y = -(side / 2);
     camera.position.z = side / 2;
+		camera.lookAt(scene.position);
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
@@ -47,10 +50,13 @@
     document.getElementById('webgl').appendChild(renderer.domElement);
 
     render();
-    var ix = side * side;
+    
+		var ix = side * side;
     var side_2 = side * side;
     function render() {
+				//camera.position.z = geometry.vertices[side/2].z + 40;
         controls.update();
+				if(roll){
         for(var j = side; j < side_2; j++){
             geometry.vertices[j - side].z = geometry.vertices[j].z;
         }
@@ -58,6 +64,7 @@
             geometry.vertices[j].z = (((octave_perlin(ix % side, ix / side, 0.5) * hi) - hi) / 65535 * 100) * (Math.cos((ix / side) / 200) * 1.5);
             ix++;
         }
+				}
         setTimeout(function(){ requestAnimationFrame(render); }, 1000 / 25);
         geometry.verticesNeedUpdate = true;
         renderer.render(scene, camera);
