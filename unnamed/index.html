@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>webgl-noise</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #info{
+            z-index: 3;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="webgl"></div>
+    <div id="info"></div>
+    <script src="../libs/three.min.js"></script>
+    <script src="../libs/TrackballControls.js"></script>
+    <script src="../libs/perlin.js"></script>
+    <script>
+
+    var side = 50;
+    var roll = true;
+    var fps = 25;
+
+    // var imgTexture = THREE.ImageUtils.loadTexture( "face.jpg" );
+    // var imagedata = getImageData( imgTexture );
+
+    var width  = window.innerWidth,
+        height = window.innerHeight;
+
+    var scene = new THREE.Scene();
+
+    var camera = new THREE.PerspectiveCamera(65, width / height, 0.5, 2000);
+    camera.position.x = 0;
+    camera.position.y = -side * 4;
+    camera.position.z = side / 2;
+    camera.lookAt(scene.position);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(width, height);
+    renderer.shadowMapEnable = true;
+    renderer.shadowMapSoft = true;
+
+    var controls = new THREE.TrackballControls(camera);
+    
+    var geometry = new THREE.SphereGeometry(side, side * 3, side * 2);   
+    geometry.thetaLength = Math.PI * 2;
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
+    
+    var material = new THREE.MeshPhongMaterial( { color: 0xffffff, wireframe: false } );
+    
+    var object = new THREE.Mesh(geometry, material);
+		object.castShadow = true;
+		object.receiveShadow = true;
+
+    scene.add(object);
+    
+    scene.add(new THREE.AmbientLight(0x404040, 0.25));
+
+    var pointLight = new THREE.PointLight(0xffffff, 0.75);
+    pointLight.position.set(-side * 2, -side * 2, 50);
+    scene.add(pointLight);
+
+    // var pointLight2 = new THREE.PointLight(0x00ff77, 0.75);
+    // pointLight2.position.set(side * 2, side * 2, 50);
+    // scene.add(pointLight2);
+
+    var pointLight3 = new THREE.PointLight(0x00aaff, 0.75);
+    pointLight3.position.set(side * 1.5, -side * 2, side * 3);
+    scene.add(pointLight3);
+
+    var controls = new THREE.TrackballControls(camera);
+
+    document.getElementById('webgl').appendChild(renderer.domElement);
+    
+    document.addEventListener('keydown', function(event){
+        event = event || windowEvent;
+        console.log(event.keyCode);
+        switch(event.keyCode){
+            case 84: { done = false; break; }
+        }
+    },false);
+
+    render();
+    
+    var x = .0051;
+    var done = false;
+    var y = 0;
+    function render() {
+        controls.update();
+        object.rotation.x += 0.01;
+        object.rotation.z += 0.017;
+        object.rotation.y += 0.0097;
+        if(y < 10){
+            geometry.vertices.forEach(function(verticle){
+                var n = noise.perlin3(verticle.x, verticle.y, verticle.z);    
+                // verticle.x += n;
+                verticle.y += (n * 2.5);
+                verticle.z += n;
+            });
+            y++;
+        }
+        done = true;
+        
+        
+        setTimeout(function(){ requestAnimationFrame(render); }, 1000 / fps);
+        geometry.verticesNeedUpdate = true;
+        renderer.render(scene, camera);
+    }
+
+    function getImageData( img ) {
+        var canvas = document.createElement( "canvas" );
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var context = canvas.getContext("2d");
+        context.drawImage( img, 0, 0 );
+        return context.getImageData( 0, 0, img.width, img.height );
+    }
+
+    function getPixel( imagedata, x, y ) {
+        var position = ( x + imagedata.width * y ) * 4, data = imagedata.data;
+        return { r: data[ position ], g: data[ position + 1 ], b: data[ position + 2 ], a: data[ position + 3 ] };
+    }
+
+</script>
+</body>
+
+</html>
