@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>webgl-noise</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #info{
+            z-index: 3;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="webgl"></div>
+    <div id="info"></div>
+    <script src="../libs/three.min.js"></script>
+    <script src="../libs/TrackballControls.js"></script>
+    <script src="../libs/perlin.js"></script>
+    <script src="../libs/FlyControls.js"></script>
+    <script src="../libs/FirstPersonControls.js"></script>
+    <script>
+
+    var side = 250;
+    var hi = side * 400;
+    var octaves = 11;
+    var roll = false;
+    var fps = 25;
+
+    var info = document.getElementById("info");
+
+    var TWO_PI = Math.PI * 2
+    var width  = window.innerWidth,
+        height = window.innerHeight;
+
+    var scene = new THREE.Scene();
+    var clock = new THREE.Clock();
+
+    var camera = new THREE.PerspectiveCamera(65, width / height, 0.5, 1000);
+    camera.position.x = 0;
+    camera.position.y = -100;
+    camera.position.z = side / 3;
+    camera.lookAt(scene.position);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(width, height);
+    renderer.shadowMapEnable = true;
+    renderer.shadowMapSoft = true;
+
+    var controls = new THREE.TrackballControls(camera);
+    // var flyControls = new THREE.FlyControls(camera);
+    // flyControls.movementSpeed = 15;
+    // flyControls.rollSpeed = Math.PI / 12;
+    
+    var geometry = new THREE.PlaneGeometry(side, side, side - 1, side - 1);   
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
+    generate_landscape();
+    
+    var material = new THREE.MeshLambertMaterial( { color: 0xff0000, wireframe: false } );
+    
+    var object = new THREE.Mesh(geometry, material);
+    scene.add(object);
+
+    object.receiveShadow = true;
+    object.castShadow = true;
+
+    var spotLight = new THREE.PointLight(0xffffff);
+    spotLight.position.set(150, 250, 150);
+    spotLight.castShadow = true;
+    spotLight.intensity = 1.5;
+    scene.add(spotLight);
+
+//     var loader = new THREE.JSONLoader();
+// loader.load( 'plane.json', function ( geometry, materials ) {
+//     var mesh = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial( materials ) );
+//     scene.add( mesh );
+// });
+
+    // var loader = new THREE.ObjectLoader();
+    // var objj = null;
+    // loader.load("plane.json",function ( obj ) {
+    //     objj = obj;
+    //     // console.log(obj);
+    //     scene.add( obj );
+    // });
+
+    var controls = new THREE.TrackballControls(camera);
+
+    document.getElementById('webgl').appendChild(renderer.domElement);
+    
+    document.addEventListener('keydown', function(event){
+        event = event || windowEvent;
+        console.log(event.keyCode);
+        switch(event.keyCode){
+            case 84: { roll = !roll; break; }
+        }
+        console.log("Octaves: " + octaves);
+    },false);
+
+    render();
+    
+		var ix = side * side;
+    var side_2 = side * side;
+    function render() {
+        var delta = clock.getDelta();
+		// flyControls.update(delta);
+        controls.update();
+        // spotLight.position.set(camera.position);
+        
+        info.innerHTML = octaves;
+
+				if(roll){
+        for(var j = side; j < side_2; j++){
+            geometry.vertices[j - side].z = geometry.vertices[j].z;
+        }
+        for(var j = (side_2 - side); j < side_2; j++){
+            geometry.vertices[j].z = (((octave_perlin(ix % side, ix / side, 0.5) * hi) - hi) / 65535 * 100) * (Math.cos((ix / side) / 200) * 1.5);
+            ix++;
+        }
+				}
+        setTimeout(function(){ requestAnimationFrame(render); }, 1000 / fps);
+        geometry.verticesNeedUpdate = true;
+        renderer.render(scene, camera);
+    }
+
+    function generate_landscape(){
+        noise.seed(Math.random());
+        for (var i = 0; i < side * side; i+=1){ 
+            geometry.vertices[i].z = (((octave_perlin(i % side, i / side, 0.5) * hi) - hi) / 65535 * 100) * (Math.cos((i / side) / 200) * 1.5);
+        }
+    }
+
+    function octave_perlin(x, y, persistence) {
+        var total = 0;
+        var frequency = 1;
+        var amplitude = 1.;
+        var maxValue = 0;
+        
+        for(var i=0; i < octaves; i++) {
+            total += (noise.perlin3((x/side) * frequency, (y/side) * frequency, 1) + 1) * amplitude;
+            maxValue += amplitude;
+            amplitude *= persistence;
+            frequency *= 2;
+        }
+        return total/maxValue;
+    }
+
+</script>
+</body>
+
+</html>
